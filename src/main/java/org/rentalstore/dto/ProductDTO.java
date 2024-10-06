@@ -1,6 +1,7 @@
 package org.rentalstore.dto;
 
 import lombok.Data;
+import org.rentalstore.entity.Category;
 
 @Data
 public class ProductDTO {
@@ -10,5 +11,6 @@ public class ProductDTO {
     private Double price;
     private int stock;
     private String imagePath;
+    private Category category;
 
 }

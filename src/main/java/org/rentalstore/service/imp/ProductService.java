@@ -28,6 +28,7 @@ public class ProductService implements IProduct {
         product1.setImagePath(product.getImagePath());
         product1.setCreated(new Date());
         product1.setStock(product.getStock());
+        product1.setCategory(product.getCategory());
         return  ResponseEntity.ok( productRepository.save(product1));
     }
 
@@ -51,6 +52,7 @@ public class ProductService implements IProduct {
             product1.setPrice(product.getPrice());
             product1.setStock(product.getStock());
             product1.setImagePath(product.getImagePath());
+            product1.setCategory(product.getCategory());
             product1.setModified(new Date());
             return  ResponseEntity.ok( productRepository.save(product1));
         }
