@@ -1,5 +1,6 @@
 package org.rentalstore.controller;
 
+import org.rentalstore.dto.ProdcutAdminDTO;
 import org.rentalstore.dto.ProductDTO;
 import org.rentalstore.entity.Product;
 import org.rentalstore.service.imp.ProductService;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @RestController()
 @RequestMapping("/api-product")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173/")
 public class ProductController {
 
     private final ProductService productService;
@@ -27,7 +28,7 @@ public class ProductController {
 
     }
     @GetMapping("/list")
-    public ResponseEntity<List<Product>> list() {
+    public ResponseEntity<List<ProdcutAdminDTO>> list() {
         return  productService.getProducts();
     }
     @GetMapping("/getById")
@@ -45,5 +46,10 @@ public class ProductController {
     @DeleteMapping("/delete")
     public ResponseEntity<?> delete(@RequestParam final Long  id) {
         return productService.deleteProduct(id);
+    }
+
+    @GetMapping("/getListCategory")
+    public ResponseEntity<List<Product>> getListCategory(@RequestParam String category){
+        return productService.getProductsByCategory(category);
     }
 }

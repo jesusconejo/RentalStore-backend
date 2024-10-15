@@ -18,6 +18,8 @@ public class Product {
     private Double price;
     private int stock;
     private String imagePath;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
     private Date created;
     private Date modified;
