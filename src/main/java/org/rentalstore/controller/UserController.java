@@ -1,8 +1,8 @@
 package org.rentalstore.controller;
 
 
-import org.rentalstore.dto.LoginUserDTO;
-import org.rentalstore.dto.UserDTO;
+import org.rentalstore.dto.request.LoginUserDTO;
+import org.rentalstore.dto.request.UserDTO;
 import org.rentalstore.service.imp.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

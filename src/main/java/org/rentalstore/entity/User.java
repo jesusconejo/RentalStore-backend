@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -32,5 +34,10 @@ public class User {
     private Date created;
     private Date modified;
 
+    @OneToMany(mappedBy = "user")
+    private Set<Like> likes = new HashSet<>();
+
+    @OneToMany(mappedBy = "user")
+    private Set<Favorite> favorites = new HashSet<>();
 }
 

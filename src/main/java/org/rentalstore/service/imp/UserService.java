@@ -1,11 +1,13 @@
 package org.rentalstore.service.imp;
 
-import org.rentalstore.dto.ErrorResponseDTO;
-import org.rentalstore.dto.UserDTO;
-import org.rentalstore.dto.UserResponseDTO;
-import org.rentalstore.entity.Role;
-import org.rentalstore.entity.User;
-import org.rentalstore.repository.UserRepository;
+import org.rentalstore.dto.error.ErrorResponseDTO;
+import org.rentalstore.dto.request.UserDTO;
+import org.rentalstore.dto.response.ReservationResponseDTO;
+import org.rentalstore.dto.response.ResponseFavoriteDTO;
+import org.rentalstore.dto.response.ResponseLikeDTO;
+import org.rentalstore.dto.response.UserResponseDTO;
+import org.rentalstore.entity.*;
+import org.rentalstore.repository.*;
 import org.rentalstore.service.IUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,21 +18,28 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
 
 @Service
 public class UserService implements IUser {
     private final static Logger LOGGER = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
+    private final LikeRepository likeRepository;
+    private final BuyCarRepository buyCarRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final ReservationRepository reservationRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final Role role;
 
     @Autowired
-    public UserService(final UserRepository userRepository) {
+    public UserService(final UserRepository userRepository, LikeRepository likeRepository, BuyCarRepository buyCarRepository, FavoriteRepository favoriteRepository, ReservationRepository reservationRepository) {
         this.userRepository = userRepository;
+        this.likeRepository = likeRepository;
+        this.buyCarRepository = buyCarRepository;
+        this.favoriteRepository = favoriteRepository;
+        this.reservationRepository = reservationRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         role = new Role();
     }
@@ -67,19 +76,27 @@ public class UserService implements IUser {
         }else{
             user.setRole(Role.getRolById(2));
         }
-
         user.setEmail(userDto.getEmail());
         user.setCreated(new Date());
         try {
 
             User userOptional = userRepository.save(user);
-            responseDTO.setId(userOptional.getId());
-            responseDTO.setEmail(userOptional.getEmail());
-            responseDTO.setName(userOptional.getName());
-            responseDTO.setLastName(userOptional.getLastName());
-            responseDTO.setUserName(userOptional.getUsername());
-            responseDTO.setRol(userOptional.getRole());
-            responseDTO.setCreated(userOptional.getCreated().toString());
+            BuyCar buyCar = new BuyCar();
+            buyCar.setUser(userOptional);
+            BuyCar buyCar1= buyCarRepository.save(buyCar);
+
+
+            Optional<User> user2= userRepository.findById(Math.toIntExact(userOptional.getId()));
+          //  user2.get().setBuyCar(buyCar1.getUser().getBuyCar());
+            userRepository.save(user2.get());
+            responseDTO.setId(user2.get().getId());
+            responseDTO.setEmail(user2.get().getEmail());
+            responseDTO.setName(user2.get().getName());
+            responseDTO.setLastName(user2.get().getLastName());
+            responseDTO.setUserName(user2.get().getUsername());
+            responseDTO.setRol(user2.get().getRole());
+            responseDTO.setCreated(user2.get().getCreated().toString());
+            //responseDTO.setBuyCarId(user2.get().getBuyCar().getId());
             return ResponseEntity.ok(responseDTO);
 
         } catch (Exception e) {
@@ -174,6 +191,7 @@ public class UserService implements IUser {
         Optional<User> userOptional = Optional.empty();
         UserResponseDTO responseDTO = new UserResponseDTO();
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO();
+        ResponseLikeDTO responseLikeDTO ;
         if (username != null) {
             userOptional = userRepository.findByUsername(username);
             errorResponseDTO.setError("userName");
@@ -198,8 +216,36 @@ public class UserService implements IUser {
             responseDTO.setErrorResponseDTO(errorResponseDTO);
             return new ResponseEntity<>(responseDTO, HttpStatus.UNAUTHORIZED);
         }
-
-
+        Set<Like> likes = likeRepository.findAllByUser(userOptional);
+        Set<Favorite> favorites = favoriteRepository.findAllByUser(userOptional);
+        Set<Reservation> reservations = reservationRepository.findByUser(userOptional);
+        Set<ResponseLikeDTO> responseLikeDTOs = new HashSet<>();
+        Set<ResponseFavoriteDTO> responseFavoriteDTOs = new HashSet<>();
+        Set<ReservationResponseDTO> reservationResponseDTOs = new HashSet<>();
+        for (Like like : likes) {
+            responseLikeDTO= new ResponseLikeDTO();
+            responseLikeDTO.setId(like.getId());
+            responseLikeDTO.setUserId(like.getUser().getId());
+            responseLikeDTO.setProductId(like.getProduct().getId());
+            responseLikeDTO.setDate(like.getLikeDate());
+            responseLikeDTOs.add(responseLikeDTO);
+        }
+        for (Favorite favorite : favorites) {
+            ResponseFavoriteDTO responseFavoriteDTO = new ResponseFavoriteDTO();
+            responseFavoriteDTO.setIdUser(favorite.getUser().getId());
+            responseFavoriteDTO.setIdProduct(favorite.getProduct().getId());
+            responseFavoriteDTO.setQualification(favorite.getQuantity());
+            responseFavoriteDTO.setCreated(favorite.getCreated());
+            responseFavoriteDTOs.add(responseFavoriteDTO);
+        }
+        for(Reservation reservation : reservations ){
+            ReservationResponseDTO responseReservationDTO = new ReservationResponseDTO();
+            responseReservationDTO.setUserId(reservation.getId());
+            responseReservationDTO.setProductId(reservation.getProduct().getId());
+            responseReservationDTO.setStartReservation(reservation.getStart());
+            responseReservationDTO.setEndReservation(plusDays(reservation.getStart(),7));
+            reservationResponseDTOs.add(responseReservationDTO);
+        }
         responseDTO.setId(user.getId());
         responseDTO.setUserName(user.getUsername());
         responseDTO.setEmail(user.getEmail());
@@ -207,7 +253,9 @@ public class UserService implements IUser {
         responseDTO.setLastName(user.getLastName());
         responseDTO.setRol(user.getRole());
         responseDTO.setCreated(user.getCreated().toString());
-
+        responseDTO.setLikeList(responseLikeDTOs);
+        responseDTO.setFavoriteList(responseFavoriteDTOs);
+        responseDTO.setReservationList(reservationResponseDTOs);
         return ResponseEntity.ok(responseDTO);
     }
 
@@ -238,7 +286,17 @@ public class UserService implements IUser {
         if (date == null) {
             return null;
         }
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
         return formatter.format(date);
+    }
+    private  Date plusDays(Date date, int days) {
+        // Convertir Date a LocalDate
+        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        // Restar los días
+        LocalDate newDate = localDate.plusDays(days);
+
+        // Convertir de nuevo LocalDate a Date
+        return Date.from(newDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 }

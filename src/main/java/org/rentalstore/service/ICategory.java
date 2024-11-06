@@ -1,8 +1,7 @@
 package org.rentalstore.service;
 
 
-import org.rentalstore.dto.CategoryDTO;
-import org.rentalstore.entity.Category;
+import org.rentalstore.dto.request.CategoryDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface ICategory {

@@ -1,7 +1,7 @@
 package org.rentalstore.controller;
 
-import org.rentalstore.dto.ProdcutAdminDTO;
-import org.rentalstore.dto.ProductDTO;
+import org.rentalstore.dto.response.ProdcutResponseDTO;
+import org.rentalstore.dto.request.ProductDTO;
 import org.rentalstore.entity.Product;
 import org.rentalstore.service.imp.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class ProductController {
 
     }
     @GetMapping("/list")
-    public ResponseEntity<List<ProdcutAdminDTO>> list() {
+    public ResponseEntity<List<ProdcutResponseDTO>> list() {
         return  productService.getProducts();
     }
     @GetMapping("/getById")
@@ -49,7 +49,12 @@ public class ProductController {
     }
 
     @GetMapping("/getListCategory")
-    public ResponseEntity<List<Product>> getListCategory(@RequestParam String category){
+    public ResponseEntity<List<ProdcutResponseDTO>> getListCategory(@RequestParam String category){
         return productService.getProductsByCategory(category);
+    }
+
+    @PostMapping("/getProductsByListId")
+    public ResponseEntity<Iterable<Product>> getProductsByListId(@RequestBody List<Long> ids) {
+        return productService.findAllByListIds(ids);
     }
 }
