@@ -2,6 +2,7 @@ package org.rentalstore.service.imp;
 
 import org.rentalstore.dto.error.ErrorResponseDTO;
 import org.rentalstore.dto.request.ReservationDTO;
+import org.rentalstore.dto.response.BuyCarResponse;
 import org.rentalstore.dto.response.ReservationResponseDTO;
 import org.rentalstore.entity.BuyCar;
 import org.rentalstore.entity.Product;
@@ -27,6 +28,7 @@ import java.util.*;
 @Service
 public class ReservationService implements IReservation {
     private final Logger LOGGER = LoggerFactory.getLogger(ReservationService.class);
+    private final Double TAX = 16.0;
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
@@ -56,21 +58,43 @@ public class ReservationService implements IReservation {
         reservation.setUser(user.get());
         reservation.setCreated(new Date());
         reservation.setStart(fromStringToDate(reservationDTO.getStartReservation()));
-        reservation.setEnd(fromStringToDate(reservationDTO.getEndReservation()));
+        reservation.setEnd(plusDays(fromStringToDate(reservationDTO.getStartReservation()),7));
         List<Product> productList =new ArrayList<>();
         Optional<BuyCar>  buyCar=buyCarRepository.findByUser(user.get());
+        BuyCarResponse buyCarResponse = new BuyCarResponse();
         if(buyCar.isEmpty()){
+            LOGGER.info("Buy car not found");
+            BuyCar buyCar1 = new BuyCar();
             productList.add(product.get());
-            buyCar.get().setUser(user.get());
-            buyCar.get().setTax(16.0);
-            buyCar.get().setProducts(productList);
-            buyCarRepository.save(buyCar.get());
+            buyCar1.setUser(user.get());
+            buyCar1.setSubTotal(getSubTotal(productList));
+            buyCar1.setTotal(getTotal(productList));
+            buyCar1.setPrice(product.get().getPrice());
+            buyCar1.setTax(TAX);
+            buyCar1.setProducts(productList);
+            buyCarRepository.save(buyCar1);
+            reservation.setBuyCar(buyCar1);
+            buyCarResponse.setProducts(buyCar1.getProducts());
+            buyCarResponse.setSubTotal(buyCar1.getSubTotal());
+            buyCarResponse.setTotal(buyCar1.getTotal());
+            buyCarResponse.setPrice(buyCar1.getPrice());
+            buyCarResponse.setTax(buyCar1.getTax());
         }else{
-            for(Product p: buyCar.get().getProducts()){
-                productList.add(p);
-            }
+            productList.addAll(buyCar.get().getProducts());
+            productList.add(product.get());
             buyCar.get().setProducts(productList);
+            buyCar.get().setUser(user.get());
+            buyCar.get().setSubTotal(getSubTotal(productList));
+            buyCar.get().setTotal(getTotal(productList));
+            buyCar.get().setPrice(product.get().getPrice());
+            buyCar.get().setTax(TAX);
             buyCarRepository.save(buyCar.get());
+            reservation.setBuyCar(buyCar.get());
+            buyCarResponse.setProducts(buyCar.get().getProducts());
+            buyCarResponse.setSubTotal(buyCar.get().getSubTotal());
+            buyCarResponse.setTotal(buyCar.get().getTotal());
+            buyCarResponse.setPrice(buyCar.get().getPrice());
+            buyCarResponse.setTax(buyCar.get().getTax());
         }
 
 
@@ -81,6 +105,8 @@ public class ReservationService implements IReservation {
         res.setProductId(product.get().getId());
         res.setStartReservation(reservation.getStart());
         res.setEndReservation(reservation.getEnd());
+        res.setBuyCar(buyCarResponse);
+
         return ResponseEntity.status(200).body(res);
     }
 
@@ -118,4 +144,21 @@ public class ReservationService implements IReservation {
         return Date.from(newDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 
+    private Double getTotal(List<Product> productList) {
+        Double total = 0.0;
+        for (Product p : productList) {
+            total += p.getPrice() ;
+
+        }
+        total += total * (TAX / 100);
+        return total;
+    }
+
+    private Double getSubTotal(List<Product> productList) {
+        Double total = 0.0;
+        for (Product p : productList) {
+            total += p.getPrice() ;
+        }
+        return total;
+    }
 }
