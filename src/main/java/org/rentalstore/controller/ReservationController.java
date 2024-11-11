@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api-reservation")
+@CrossOrigin(origins = "http://localhost:5173/")
 public class ReservationController {
     private final Logger LOGGER = LoggerFactory.getLogger(ReservationController.class);
     private final ReservationService reservationService;
