@@ -1,4 +1,4 @@
-package org.rentalstore.dto;
+package org.rentalstore.dto.error;
 
 import lombok.Data;
 

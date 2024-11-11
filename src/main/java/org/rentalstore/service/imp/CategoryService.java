@@ -1,9 +1,11 @@
 package org.rentalstore.service.imp;
 
-import org.rentalstore.dto.CategoryDTO;
-import org.rentalstore.dto.ErrorResponseDTO;
+import org.rentalstore.dto.request.CategoryDTO;
+import org.rentalstore.dto.error.ErrorResponseDTO;
 import org.rentalstore.entity.Category;
+import org.rentalstore.entity.Product;
 import org.rentalstore.repository.CategoryRepository;
+import org.rentalstore.repository.ProductRepository;
 import org.rentalstore.service.ICategory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,15 +13,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class CategoryService implements ICategory {
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -43,10 +48,19 @@ public class CategoryService implements ICategory {
     @Override
     public ResponseEntity<?> deleteCategory(int id) {
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO();
+        Optional<Category> category1 = categoryRepository.findById(id);
+        if (category1.isPresent()) {
+            List<Product> productOptional = productRepository.findByCategory(category1.get());
+            if(productOptional.isEmpty()) {
+                categoryRepository.deleteById(id);
+                return ResponseEntity.status(HttpStatus.OK).build();
+            }else {
+                errorResponseDTO.setMessage("category is looked by product");
+                errorResponseDTO.setErrorCode(9);
+                errorResponseDTO.setError("duplicate");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponseDTO);
+            }
 
-        if (categoryRepository.findById(id).isPresent()) {
-            categoryRepository.deleteById(id);
-            return ResponseEntity.status(HttpStatus.OK).build();
         }
         errorResponseDTO.setMessage("category not found");
         errorResponseDTO.setErrorCode(9);

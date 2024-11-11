@@ -1,6 +1,6 @@
 package org.rentalstore.controller;
 
-import org.rentalstore.dto.CategoryDTO;
+import org.rentalstore.dto.request.CategoryDTO;
 import org.rentalstore.service.imp.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

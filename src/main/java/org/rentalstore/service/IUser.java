@@ -1,7 +1,6 @@
 package org.rentalstore.service;
 
-import org.rentalstore.dto.UserDTO;
-import org.rentalstore.entity.User;
+import org.rentalstore.dto.request.UserDTO;
 import org.springframework.http.ResponseEntity;
 
 public interface IUser {
